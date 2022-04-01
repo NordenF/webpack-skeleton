@@ -1,11 +1,14 @@
-import Post from "@models/Post";
-import WebpackLogo from './assets/webpack-logo';
-import './styles/styles';
-import './styles/scss.scss';
-import './babel'
+import "core-js/stable";  // For babel.
+import "regenerator-runtime/runtime";  // For babel.
 
-const post = new Post("Webpack post title", WebpackLogo);
+import moment from 'moment';
+import Post from "./models/Post";
+import "./styles/styles.css"
+import "./styles/sass-example.scss"
+import "./babel-example"
 
-const pre = document.getElementsByTagName('pre')[0];
-pre.classList.add('code');
-pre.innerText = post.toString();
+const post = new Post("Webpack Post title")
+
+console.log("Post to string:", post.toString())
+
+document.getElementById("timeDiv").textContent = moment().format('LLLL');

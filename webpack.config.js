@@ -1,150 +1,96 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const {CleanWebpackPlugin} = require('clean-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
-const TerserWebpackPlugin = require('terser-webpack-plugin');
+const {CleanWebpackPlugin} = require("clean-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const ESLintPlugin = require("eslint-webpack-plugin");
+const HTMLWebpackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
-const isDev = process.env.NODE_ENV === "development";
-const isProd = !isDev;
+const webpack = require("webpack");
+const path = require("path");
 
-const optimization = () => {
-    const config = {
-        splitChunks: {
-            chunks: "all",
-        }
-    };
+module.exports = (env, argv) => {
+    let mode = argv.mode
+    if (!mode)
+        mode = "development";
 
-    if (isProd) {
-        config.minimizer = [
-            new OptimizeCssAssetsWebpackPlugin(),
-            new TerserWebpackPlugin(),
-        ]
-    }
+    const isDev = mode === "development";
 
-    return config;
-};
+    const filename = ext => isDev ? `[name].${ext}` : `[name].[contenthash].${ext}`;
 
-const filename = ext => `[name].[hash].${ext}`;
-
-const cssLoaders = (extra) => {
-    const loaders = [{
-        loader: MiniCssExtractPlugin.loader,
-        options: {
-            hmr: isDev,
-            reloadAll: true,
+    return {
+        context: path.resolve(__dirname, "src"),
+        devServer: {
+            hot: isDev,
+            port: 8080
         },
-    }, 'css-loader'];
-    if (extra) {
-        loaders.push(extra);
-    }
-    return loaders;
-};
-
-const babelOptions = (preset) => {
-    const options = {
-        presets: [
-            '@babel/preset-env',
-        ],
-        plugins: [
-            '@babel/plugin-proposal-class-properties',
-        ]
-    };
-
-    if (preset) {
-        options.presets.push(preset);
-    }
-
-    return options;
-};
-
-const jsLoaders = () => {
-    const loaders = [{
-        loader: "babel-loader",
-        options: babelOptions(),
-    }];
-
-    if (isDev) {
-        loaders.push({loader: 'eslint-loader', options: {},});
-    }
-
-    return loaders;
-};
-
-const plugins = () => {
-    const base = [
-        new HtmlWebpackPlugin({
-            template: "./index.html",
-            minify: {
-                collapseWhitespace: isProd,
-            }
-        }),
-        new CleanWebpackPlugin(),
-        new CopyWebpackPlugin(
-            [
+        devtool: isDev ? "source-map" : undefined,
+        entry: {
+            analytics: "./analytics.js",
+            main: "./index.js"
+        },
+        mode: mode,
+        module: {
+            rules: [
                 {
-                    from: path.resolve(__dirname, 'src/favicon.ico'),
-                    to: path.resolve(__dirname, 'dist')
+                    test: /\.css$/,
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        "css-loader"
+                    ],
+                },
+                {
+                    test: /\.s[ac]ss$/,
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        "css-loader",
+                        "sass-loader"
+                    ],
+                },
+                {
+                    test: /\.m?js$/,
+                    exclude: /node_modules/,
+                    use: {
+                        loader: "babel-loader",
+                        options: {
+                            presets: ["@babel/preset-env"]
+                        }
+                    }
                 }
             ]
-        ),
-        new MiniCssExtractPlugin({
-            filename: filename('css'),
-        }),
-    ];
-
-    return base;
-};
-
-module.exports = {
-    context: path.resolve(__dirname, 'src'),
-    mode: 'development',
-    entry: {
-        main: ['@babel/polyfill', './index.js'],
-        analytics: './analytics.js',
-    },
-    output: {
-        filename: filename('js'),
-        path: path.resolve(__dirname, 'dist'),
-    },
-    resolve: {
-        extensions: ['.js', '.png', '.css'],
-        alias: {
-            '@models': path.resolve(__dirname, 'src/models'),
-            '@': path.resolve(__dirname, 'src'),
-        }
-    },
-    optimization: optimization(),
-    devServer: {
-        port: 4200,
-        hot: isDev,
-    },
-    devtool: isDev ? 'source-map' : '',
-    plugins: plugins(),
-    module: {
-        rules: [
-            {
-                test: /\.css$/,
-                use: cssLoaders(),
-            },
-            {
-                test: /\.s[ac]ss$/,
-                use: cssLoaders('sass-loader'),
-            },
-            {
-                test: /\.(png|jpg|svg|gif)$/,
-                use: ['file-loader'],
-            },
-            {
-                test: /\.(ttf|woff|woff2|eot)$/,
-                use: ['file-loader'],
-            },
-            {
-                test: /\.js$/,
-                exclude: /node_modules/,
-                use: jsLoaders(),
-            },
+        },
+        optimization: {
+            minimizer: [
+                new CssMinimizerPlugin(),
+                new TerserPlugin()
+            ],
+            splitChunks: {
+                chunks: "all"
+            }
+        },
+        output: {
+            filename: filename("js"),
+            path: path.resolve(__dirname, "dist")
+        },
+        plugins: [
+            new CleanWebpackPlugin(),
+            new CopyWebpackPlugin({
+                    patterns: [
+                        {
+                            from: path.resolve(__dirname, "src/favicon.ico"),
+                            to: path.resolve(__dirname, "dist")
+                        },
+                    ]
+                },
+            ),
+            new ESLintPlugin(),
+            new HTMLWebpackPlugin({
+                template: "./index.html"
+            }),
+            new MiniCssExtractPlugin({
+                filename: filename("css"),
+            }),
+            new webpack.HotModuleReplacementPlugin()
         ]
-    }
+    };
 };
