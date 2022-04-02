@@ -3,8 +3,6 @@ import "regenerator-runtime/runtime";  // For babel.
 
 import moment from 'moment';
 import Post from "./models/Post";
-import "./styles/styles.css"
-import "./styles/sass-example.scss"
 import "./babel-example"
 
 const post = new Post("Webpack Post title")

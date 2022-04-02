@@ -4,9 +4,9 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const RemoveEmptyScriptsPlugin = require('webpack-remove-empty-scripts');
 const TerserPlugin = require("terser-webpack-plugin");
 
-const webpack = require("webpack");
 const path = require("path");
 
 module.exports = (env, argv) => {
@@ -27,7 +27,8 @@ module.exports = (env, argv) => {
         devtool: isDev ? "source-map" : undefined,
         entry: {
             analytics: "./analytics.js",
-            main: "./index.js"
+            main: "./index.js",
+            styles: "./styles/styles.scss"
         },
         mode: mode,
         module: {
@@ -85,12 +86,13 @@ module.exports = (env, argv) => {
             ),
             new ESLintPlugin(),
             new HTMLWebpackPlugin({
+                chunks: ["analytics", "main", "styles"],
                 template: "./index.html"
             }),
             new MiniCssExtractPlugin({
                 filename: filename("css"),
             }),
-            new webpack.HotModuleReplacementPlugin()
+            new RemoveEmptyScriptsPlugin()
         ]
     };
 };
