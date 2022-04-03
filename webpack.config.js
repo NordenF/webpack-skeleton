@@ -1,5 +1,4 @@
 const {CleanWebpackPlugin} = require("clean-webpack-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const HTMLWebpackPlugin = require("html-webpack-plugin");
@@ -41,12 +40,8 @@ module.exports = (env, argv) => {
                     ],
                 },
                 {
-                    test: /\.s[ac]ss$/,
-                    use: [
-                        MiniCssExtractPlugin.loader,
-                        "css-loader",
-                        "sass-loader"
-                    ],
+                    test: /\.html$/i,
+                    loader: "html-loader",
                 },
                 {
                     test: /\.m?js$/,
@@ -57,7 +52,15 @@ module.exports = (env, argv) => {
                             presets: ["@babel/preset-env"]
                         }
                     }
-                }
+                },
+                {
+                    test: /\.s[ac]ss$/,
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        "css-loader",
+                        "sass-loader"
+                    ],
+                },
             ]
         },
         optimization: {
@@ -75,15 +78,6 @@ module.exports = (env, argv) => {
         },
         plugins: [
             new CleanWebpackPlugin(),
-            new CopyWebpackPlugin({
-                    patterns: [
-                        {
-                            from: path.resolve(__dirname, "src/favicon.ico"),
-                            to: path.resolve(__dirname, "dist")
-                        },
-                    ]
-                },
-            ),
             new ESLintPlugin(),
             new HTMLWebpackPlugin({
                 chunks: ["analytics", "main", "styles"],
